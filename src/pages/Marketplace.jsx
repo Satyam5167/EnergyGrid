@@ -60,10 +60,9 @@ export default function Marketplace() {
   const maxBuy = Math.max(...buyOrders.map(o => o.units));
 
   return (
-    <div style={{ padding: '24px 28px' }}>
+    <div className="page-pad" style={{ padding: '24px 28px' }}>
       {/* Market bar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '20px',
+      <div className="market-bar" style={{
         background: 'var(--card)', border: '1px solid var(--border)',
         borderRadius: '10px', padding: '10px 20px', marginBottom: '16px',
       }}>
@@ -87,7 +86,7 @@ export default function Marketplace() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '16px' }}>
+      <div className="market-grid">
         {/* Order Book */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 16px 0', alignItems: 'center' }}>
@@ -95,7 +94,7 @@ export default function Marketplace() {
             <span style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '20px', fontFamily: 'var(--mono)', fontWeight: 500, background: 'rgba(14,165,233,0.1)', color: 'var(--blue)', border: '1px solid rgba(14,165,233,0.2)' }}>LIVE</span>
           </div>
           <div style={{ padding: '0 16px 10px', fontSize: '10px', color: 'var(--text3)' }}>Sorted by price — best ask vs best bid</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)' }}>
+          <div className="order-book-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: 'var(--border)' }}>
             <div style={{ background: 'var(--card)', padding: '8px 12px', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--red)', background2: 'rgba(255,75,109,0.04)' }}>↑ SELL ORDERS</div>
             <div style={{ background: 'var(--card)', padding: '8px 12px', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--green)', backgroundColor: 'rgba(0,255,135,0.04)' }}>↓ BUY ORDERS</div>
             {Array.from({ length: 5 }, (_, i) => {

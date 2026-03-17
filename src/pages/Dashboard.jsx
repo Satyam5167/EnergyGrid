@@ -45,9 +45,9 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ padding: '24px 28px' }}>
+    <div className="page-pad" style={{ padding: '24px 28px' }}>
       {/* Stats Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '16px', marginBottom: '20px' }}>
+      <div className="dash-grid-4" style={{ marginBottom: '20px' }}>
         {statCards.map((s, i) => {
           const c = colorMap[s.color];
           return (
@@ -77,7 +77,7 @@ export default function Dashboard() {
       </div>
 
       {/* Mid Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '16px', marginBottom: '20px' }}>
+      <div className="dash-grid-2" style={{ marginBottom: '20px' }}>
         <ForecastChart chartRef={chartRef} />
 
         {/* Right panel */}
@@ -150,9 +150,9 @@ export default function Dashboard() {
       </div>
 
       {/* Bottom Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '16px' }}>
+      <div className="dash-grid-bottom">
         {/* Trade History */}
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'auto' }}>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', overflow: 'hidden' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 12px' }}>
             <span style={{ fontFamily: 'var(--display)', fontSize: '15px', fontWeight: 600 }}>Recent Trades</span>
             <span style={{
@@ -161,6 +161,7 @@ export default function Dashboard() {
               background: 'rgba(0,255,135,0.08)', color: 'var(--green)', border: '1px solid rgba(0,255,135,0.2)',
             }}>10 TRADES</span>
           </div>
+          <div className="trade-table-wrap">
           <table className="trade-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr>
@@ -216,6 +217,7 @@ export default function Dashboard() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* Leaderboard */}

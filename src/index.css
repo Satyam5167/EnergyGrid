@@ -471,3 +471,95 @@ body::after {
   border-radius: 50%;
   animation: lp-spin .6s linear infinite;
 }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE — DASHBOARD & MARKETPLACE
+   ══════════════════════════════════════════════ */
+
+/* --- Responsive grid helpers (these override inline styles via className) --- */
+.dash-grid-4  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.dash-grid-2  { display: grid; grid-template-columns: 1fr 340px; gap: 16px; }
+.dash-grid-bottom { display: grid; grid-template-columns: 1fr 360px; gap: 16px; }
+.market-grid  { display: grid; grid-template-columns: 1fr 280px; gap: 16px; }
+.market-bar   { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+
+/* Trade table — always scrollable on parent */
+.trade-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.trade-table      { min-width: 600px; }
+
+/* ────────────────────────
+   ≤ 1200px  (large tablet)
+   ──────────────────────── */
+@media (max-width: 1200px) {
+  .dash-grid-4    { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ────────────────────────
+   ≤ 960px  (tablet)
+   ──────────────────────── */
+@media (max-width: 960px) {
+  .dash-grid-2    { grid-template-columns: 1fr; }
+  .dash-grid-bottom { grid-template-columns: 1fr; }
+  .market-grid    { grid-template-columns: 1fr; }
+}
+
+/* ────────────────────────
+   ≤ 768px  (large phone)
+   ──────────────────────── */
+@media (max-width: 768px) {
+  /* --- Page padding --- */
+  .page-pad { padding: 14px 14px !important; }
+
+  /* --- Navbar (class-based hiding) --- */
+  .navbar-tabs        { display: none !important; }
+  .navbar-right-full  { display: none !important; }
+  .navbar-mobile-menu { display: flex !important; }
+
+  /* --- Dashboard stat cards — 2 col --- */
+  .dash-grid-4 { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+  /* --- Market bar: wrap items into a 2×col mini-grid --- */
+  .market-bar {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  /* Hide the vertical pipe separators inside market-bar on mobile */
+  .market-bar > div > div:first-child[style*="width: 1px"] { display: none; }
+
+  /* --- Marketplace order book: stack sell/buy vertically --- */
+  .order-book-grid {
+    grid-template-columns: 1fr !important;
+  }
+  /* Hide the spread row spans correctly on 1-col */
+  .order-book-spread {
+    grid-column: 1 !important;
+  }
+}
+
+/* ────────────────────────
+   ≤ 480px  (small phone)
+   ──────────────────────── */
+@media (max-width: 480px) {
+  /* --- Stat cards: single column --- */
+  .dash-grid-4 { grid-template-columns: 1fr; }
+
+  /* --- Market bar: single column --- */
+  .market-bar { grid-template-columns: 1fr; }
+
+  /* --- Stat card internals --- */
+  .stat-card { padding: 14px 16px !important; }
+
+  /* --- Market bar item separators — hide on mobile --- */
+  .market-bar-sep { display: none; }
+
+  /* --- Dashboard mid panel pool gauge: shrink gauge --- */
+  .pool-gauge-svg { width: 110px !important; height: 66px !important; }
+
+  /* --- Fonts: slightly larger for readability --- */
+  .page-pad .trade-table td,
+  .page-pad .trade-table th { padding: 8px 10px !important; font-size: 11px !important; }
+}
+
+/* Ticker — always full width, no overflow issues */
+.ticker-wrap { overflow: hidden; width: 100%; }
