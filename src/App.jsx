@@ -1,5 +1,5 @@
 import { useState, useCallback, createContext, useContext, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
 import './index.css';
@@ -9,23 +9,67 @@ import Dashboard from './pages/Dashboard';
 import Marketplace from './pages/Marketplace';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
-import { ToastProvider } from './contexts/ToastContext';
+import Signup from './pages/Signup';
+import { ToastProvider, useToast } from './contexts/ToastContext';
+import { API_BASE_URL } from './api';
 
 // 1. Auth Context
 const AuthContext = createContext(null);
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  return context;
 }
 
 function AuthProvider({ children }) {
-  // Simple auth state mock - forcing authenticated for now to bypass missing login
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const login = () => setIsAuthenticated(true);
-  const logout = () => setIsAuthenticated(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { showToast } = useToast();
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/users/me`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setUser(data.user);
+        }
+      } catch (err) {
+        console.error('Auth check failed:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    checkAuth();
+  }, []);
+
+  const login = (userData) => {
+    setUser(userData);
+  };
+
+  const logout = async () => {
+    try {
+      await fetch(`${API_BASE_URL}/api/users/logout`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      setUser(null);
+      showToast('⚡', 'Logged out successfully');
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout failed:', err);
+      showToast('❌', 'Logout failed');
+    }
+  };
+
+  const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -33,11 +77,13 @@ function AuthProvider({ children }) {
 
 // 2. Protected Route Wrapper (Still kept for future use)
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
+  if (loading) return null; // Or a loading spinner
+
   if (!isAuthenticated) {
-    return <Navigate to="/" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return children;
@@ -55,8 +101,6 @@ function AppLayout({ children }) {
 
 // 4. Main App Component
 export default function App() {
-  // const [toast, setToast] = useState({ show: false, icon: '✓', msg: '' });
-
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -75,37 +119,37 @@ export default function App() {
     return () => lenis.destroy();
   }, []);
 
-  // const showToast = useCallback((icon, msg) => {
-  //   setToast({ show: true, icon, msg });
-  //   setTimeout(() => setToast(t => ({ ...t, show: false })), 2500);
-  // }, []);
-
   return (
-    <AuthProvider>
+    <BrowserRouter>
       <ToastProvider>
-        <BrowserRouter>
+        <AuthProvider>
           <Routes>
             {/* Main Entry Points */}
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
 
             <Route path="/dashboard" element={
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Dashboard />
+                </AppLayout>
+              </ProtectedRoute>
             } />
 
             <Route path="/marketplace" element={
-              <AppLayout>
-                <Marketplace />
-              </AppLayout>
+              <ProtectedRoute>
+                <AppLayout>
+                  <Marketplace />
+                </AppLayout>
+              </ProtectedRoute>
             } />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </BrowserRouter>
+        </AuthProvider>
       </ToastProvider>
-    </AuthProvider>
+    </BrowserRouter>
   );
 }

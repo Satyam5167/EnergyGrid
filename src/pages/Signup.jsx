@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../App';
 import { API_BASE_URL } from '../api';
-import './Login.css';
+import './Login.css'; // Reuse login styles
 
 const TRADES = [
   { from: 'Priya S.', to: 'Ravi M.', amt: '2.4 kWh', hash: '0x3f4a...2b9c', price: '₹6.40' },
@@ -13,7 +13,7 @@ const TRADES = [
   { from: 'Sanjay B.', to: 'Rahul V.', amt: '2.2 kWh', hash: '0xf7b4...9e32', price: '₹6.55' },
 ];
 
-export default function Login() {
+export default function Signup() {
   const { showToast } = useToast();
   const { login, isAuthenticated } = useAuth();
   const canvasRef = useRef(null);
@@ -31,16 +31,15 @@ export default function Login() {
   const [priceDelta, setPriceDelta] = useState(0);
   const [solarVal, setSolarVal] = useState(8.4);
   
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [pwd, setPwd] = useState('');
   const [pwdVisible, setPwdVisible] = useState(false);
-  const [remembered, setRemembered] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   useEffect(() => {
-    // ── BG canvas ──
     const canvas = canvasRef.current;
     if (!canvas) return;
     const c = canvas.getContext('2d');
@@ -76,11 +75,6 @@ export default function Login() {
         if (p.x < 0 || p.x > W) p.vx *= -1;
         if (p.y < 0 || p.y > H) p.vy *= -1;
       });
-
-      // Left panel glow
-      const gr = c.createRadialGradient(W * 0.25, H * 0.5, 0, W * 0.25, H * 0.5, 350);
-      gr.addColorStop(0, 'rgba(0,255,135,0.04)'); gr.addColorStop(1, 'transparent');
-      c.fillStyle = gr; c.fillRect(0, 0, W, H);
       animationId = requestAnimationFrame(drawBg);
     }
     drawBg();
@@ -92,22 +86,14 @@ export default function Login() {
   }, []);
 
   useEffect(() => {
-    // ── Live feed ──
     let feedIdx = 0;
-    
     function addFeedItem() {
       const t = TRADES[feedIdx % TRADES.length];
       feedIdx++;
-      setFeed(prev => {
-        const newFeed = [t, ...prev];
-        return newFeed.slice(0, 3);
-      });
+      setFeed(prev => [t, ...prev].slice(0, 3));
     }
-
     addFeedItem(); addFeedItem(); addFeedItem();
     const feedInterval = setInterval(addFeedItem, 3500);
-
-    // ── Live metrics ──
     const metricsInterval = setInterval(() => {
       setPriceDelta(prev => {
         const delta = (Math.random() - .5) * .2;
@@ -116,7 +102,6 @@ export default function Login() {
       });
       setSolarVal(curr => +(8.4 + Math.random() * .3 - .1).toFixed(1));
     }, 4000);
-
     return () => {
       clearInterval(feedInterval);
       clearInterval(metricsInterval);
@@ -130,29 +115,30 @@ export default function Login() {
 
   const showSuccess = () => {
     setShowSuccessOverlay(true);
-    showToast('⚡', 'Welcome back to the Grid!');
+    showToast('🚀', 'Welcome to EnergyGrid!');
     setTimeout(() => { navigate('/dashboard'); }, 1800);
   };
 
-  const handleLogin = async (e) => {
+  const handleSignup = async (e) => {
     if (e) e.preventDefault();
+    if (!name.trim()) { showError('Please enter your full name.'); return; }
     if (!email.trim()) { showError('Please enter your email address.'); return; }
-    if (!pwd) { showError('Please enter your password.'); return; }
+    if (!pwd) { showError('Please enter a password.'); return; }
     if (!email.includes('@')) { showError('Please enter a valid email address.'); return; }
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/users/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pwd }),
+        body: JSON.stringify({ name, email, password: pwd }),
         credentials: 'include'
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.error || 'Signup failed');
       }
 
       login(data.user);
@@ -164,7 +150,10 @@ export default function Login() {
     }
   };
 
-
+  const handleGoogleOAuth = () => {
+    showToast('🚀', 'Redirecting to Google...');
+    window.location.href = `${API_BASE_URL}/api/users/auth/google`;
+  };
 
   const walletConnect = async (providerName) => {
     if (!window.ethereum) {
@@ -184,7 +173,7 @@ export default function Login() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Wallet login failed');
+      if (!response.ok) throw new Error(data.error || 'Wallet registration failed');
 
       login(data.user);
       showSuccess();
@@ -195,42 +184,30 @@ export default function Login() {
     }
   };
 
-  const handleGoogleOAuth = () => {
-    showToast('🚀', 'Redirecting to Google...');
-    window.location.href = `${API_BASE_URL}/api/users/auth/google`;
-  };
-
   return (
     <div className="login-page-container">
       <canvas id="bgCanvas" ref={canvasRef}></canvas>
 
       <div className="login-wrap">
-
-        {/* ── LEFT PANEL ── */}
         <div className="left-panel">
           <div className="orb orb1"></div>
           <div className="orb orb2"></div>
-
-          {/* Logo */}
-          <Link to="/" className="left-logo" style={{ animation: 'l-fade-up .5s ease both' }}>
+          <Link to="/" className="left-logo">
             <div className="logo-mark">⚡</div>
             EnergyGrid
           </Link>
-
-          {/* Main text */}
           <div className="left-main">
-            <div className="left-tagline">Decentralized Solar Trading</div>
+            <div className="left-tagline">Create your profile</div>
             <h1 className="left-title">
-              Trade energy.<br/>
-              <span className="accent">Save the planet.</span><br/>
-              Earn real money.
+              Start trading.<br/>
+              <span className="accent">Automate your grid.</span><br/>
+              Join the future.
             </h1>
             <p className="left-desc">
-              Join 284 households already trading surplus solar power with their neighbors — powered by AI forecasting and blockchain settlement.
+              Set up your account in seconds and start selling your excess solar energy to the neighborhood.
             </p>
-
             <div className="metrics-strip">
-              <div className="metric-row">
+               <div className="metric-row">
                 <div className="metric-left">
                   <div className="metric-icon" style={{ background: 'rgba(0,255,135,0.08)' }}>☀️</div>
                   <div>
@@ -240,35 +217,10 @@ export default function Login() {
                 </div>
                 <div style={{ fontSize: '10px', color: 'var(--green)', fontFamily: 'var(--mono)' }}>▲ 12%</div>
               </div>
-              <div className="metric-row">
-                <div className="metric-left">
-                  <div className="metric-icon" style={{ background: 'rgba(0,229,204,0.08)' }}>🌱</div>
-                  <div>
-                    <div className="metric-label">CO₂ saved today</div>
-                    <div className="metric-val" style={{ color: 'var(--teal)' }}>142 kg</div>
-                  </div>
-                </div>
-                <div style={{ fontSize: '10px', color: 'var(--teal)', fontFamily: 'var(--mono)' }}>▲ 7%</div>
-              </div>
-              <div className="metric-row">
-                <div className="metric-left">
-                  <div className="metric-icon" style={{ background: 'rgba(245,158,11,0.08)' }}>💰</div>
-                  <div>
-                    <div className="metric-label">Market price now</div>
-                    <div className="metric-val" style={{ color: 'var(--amber)' }}>₹ {priceVal.toFixed(2)} / kWh</div>
-                  </div>
-                </div>
-                <div style={{ fontSize: '10px', color: priceDelta > 0 ? 'var(--green)' : '#ff6b6b', fontFamily: 'var(--mono)' }}>{priceDelta > 0 ? '▲ up' : (priceDelta < 0 ? '▼ dn' : '↔')}</div>
-              </div>
             </div>
           </div>
-
-          {/* Live feed */}
-          <div className="live-feed" style={{ animation: 'l-fade-up .7s .35s ease both' }}>
-            <div className="feed-label">
-              <div className="feed-dot"></div>
-              Live Trades
-            </div>
+          <div className="live-feed">
+            <div className="feed-label"><div className="feed-dot"></div>Live Trades</div>
             <div>
               {feed.map((f, i) => (
                 <div key={i} className="feed-item" style={{ animationDelay: '0s' }}>
@@ -280,76 +232,64 @@ export default function Login() {
           </div>
         </div>
 
-        {/* ── RIGHT PANEL ── */}
         <div className="right-panel">
-          
-          {/* Success overlay */}
           <div className={`success-overlay ${showSuccessOverlay ? 'show' : ''}`}>
             <div className="success-check">✓</div>
-            <div className="success-title">Welcome back!</div>
-            <div className="success-sub">Redirecting to your dashboard…</div>
+            <div className="success-title">Success!</div>
+            <div className="success-sub">Creating your grid node…</div>
           </div>
 
           <div className="login-card">
             <div className="login-greeting">
-              <div className="login-welcome">Sign in to continue</div>
-              <div className="login-card-title">Welcome<br/>back</div>
-              <div className="login-sub">Enter your credentials to access the trading platform.</div>
+              <div className="login-welcome">Register for an account</div>
+              <div className="login-card-title">Join the<br/>network</div>
             </div>
 
-            <form className="login-form" onSubmit={handleLogin}>
-              
-              {/* Email */}
+            <form className="login-form" onSubmit={handleSignup}>
+              <div className="input-group">
+                <label className="input-label">Full Name</label>
+                <div className="input-wrap">
+                  <span className="input-icon">👤</span>
+                  <input type="text" value={name} onChange={e => setName(e.target.value)} className="form-input" placeholder="Arjun K." />
+                </div>
+              </div>
+
               <div className="input-group">
                 <label className="input-label">Email address</label>
                 <div className="input-wrap">
                   <span className="input-icon">✉</span>
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={`form-input ${errorMsg ? 'error' : ''}`} style={{ borderColor: email === 'demo@energygrid.app' ? 'var(--green)' : undefined }} placeholder="you@example.com" autoComplete="email" />
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={`form-input ${errorMsg ? 'error' : ''}`} placeholder="you@example.com" />
                 </div>
               </div>
 
-              {/* Password */}
               <div className="input-group">
                 <label className="input-label">Password</label>
                 <div className="input-wrap">
                   <span className="input-icon">🔒</span>
-                  <input type={pwdVisible ? 'text' : 'password'} value={pwd} onChange={e => setPwd(e.target.value)} className={`form-input ${errorMsg ? 'error' : ''}`} style={{ borderColor: pwd === 'demo1234' ? 'var(--green)' : undefined }} placeholder="••••••••" autoComplete="current-password" />
-                  <button type="button" onClick={() => setPwdVisible(!pwdVisible)} className="pwd-toggle" tabIndex="-1">{pwdVisible ? '🙈' : '👁'}</button>
+                  <input type={pwdVisible ? 'text' : 'password'} value={pwd} onChange={e => setPwd(e.target.value)} className={`form-input ${errorMsg ? 'error' : ''}`} placeholder="••••••••" />
+                  <button type="button" onClick={() => setPwdVisible(!pwdVisible)} className="pwd-toggle">{pwdVisible ? '🙈' : '👁'}</button>
                 </div>
               </div>
 
-              {/* Remember + Forgot */}
-              <div className="form-row">
-                <div className="remember-wrap" onClick={() => setRemembered(!remembered)}>
-                  <div className={`custom-checkbox ${remembered ? 'checked' : ''}`}></div>
-                  <span className="remember-label">Remember me</span>
-                </div>
-                <a href="#" className="forgot-link">Forgot password?</a>
-              </div>
-
-              {/* Error message */}
               <div className={`error-msg ${errorMsg ? 'show' : ''}`}>
                 <span>⚠</span>
-                <span>{errorMsg || 'Invalid credentials. Please try again.'}</span>
+                <span>{errorMsg}</span>
               </div>
 
-              {/* Submit */}
               <button disabled={loading} type="submit" className={`submit-btn ${loading ? 'loading' : ''}`}>
-                <span className="btn-text">Sign In</span>
-                <div className="btn-spinner">
-                  <div className="spinner"></div>
-                </div>
+                <span className="btn-text">Create Account</span>
+                <div className="btn-spinner"><div className="spinner"></div></div>
               </button>
 
               {/* Divider */}
-              <div className="divider">
+              <div className="divider" style={{ margin: '20px 0' }}>
                 <div className="div-line"></div>
                 <span className="div-text">or continue with</span>
                 <div className="div-line"></div>
               </div>
 
               {/* Google Button */}
-              <button type="button" className="google-btn" onClick={handleGoogleOAuth}>
+              <button type="button" className="google-btn" style={{ marginBottom: '20px' }} onClick={handleGoogleOAuth}>
                 <span className="google-icon">
                   <svg viewBox="0 0 24 24" width="18" height="18">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -358,30 +298,26 @@ export default function Login() {
                     <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                   </svg>
                 </span>
-                Sign in with Google
+                Sign up with Google
               </button>
 
-
-
               {/* Wallet connect */}
-              <div className="wallet-row">
-                <button type="button" onClick={() => walletConnect('MetaMask')} className="wallet-btn">
+              <div className="wallet-row" style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                <button type="button" onClick={() => walletConnect('MetaMask')} className="wallet-btn" style={{ flex: 1, padding: '10px', background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', cursor: 'pointer' }}>
                   🦊 MetaMask
                 </button>
-                <button type="button" onClick={() => walletConnect('WalletConnect')} className="wallet-btn">
-                  🔗 WalletConnect
+                <button type="button" onClick={() => walletConnect('WalletConnect')} className="wallet-btn" style={{ flex: 1, padding: '10px', background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: '8px', color: 'var(--text)', cursor: 'pointer' }}>
+                  🔗 Wallet
                 </button>
               </div>
 
-              {/* Sign up */}
               <div className="signup-prompt">
-                New to EnergyGrid? <Link to="/signup" className="signup-link">Create an account →</Link>
+                Already have an account? <Link to="/login" className="signup-link">Sign in here →</Link>
               </div>
             </form>
           </div>
         </div>
-
-      </div>{/* login-wrap */}
+      </div>
     </div>
   );
 }

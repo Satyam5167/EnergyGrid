@@ -268,9 +268,29 @@
 /* Divider */
 .divider {
   display: flex; align-items: center; gap: 12px;
+  margin: 10px 0;
 }
-.div-line { flex: 1; height: 1px; background: var(--border); }
-.div-text { font-size: 11px; color: var(--text3); }
+.div-line { flex: 1; height: 1px; background: var(--border2); }
+.div-text { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Google Button */
+.google-btn {
+  width: 100%; padding: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border2); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  color: var(--text); font-family: var(--display); font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.google-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+.google-icon {
+  display: flex; align-items: center;
+  background: white; padding: 4px; border-radius: 6px;
+}
 
 /* Demo button */
 .demo-btn {
