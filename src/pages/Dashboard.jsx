@@ -2,8 +2,11 @@ import { useRef, useEffect, useState } from 'react';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import ForecastChart from '../components/ForecastChart';
 import Ticker from '../components/Ticker';
+import RecordEnergyModal from '../components/RecordEnergyModal';
+import ListEnergyModal from '../components/ListEnergyModal';
 import { generateTrades, leaders } from '../data';
 import { useToast } from '../contexts/ToastContext';
+import { getEnergySurplus } from '../api';
 
 // Animated Number Component
 function AnimatedNumber({ value, format = (v) => v.toFixed(1) }) {
@@ -24,32 +27,44 @@ const trades = generateTrades();
 export default function Dashboard() {
   const { showToast } = useToast();
   const chartRef = useRef(null);
-  const [stats, setStats] = useState({ prod: 8.4, cons: 5.1, surplus: 3.3, co2: 284 });
+  const [stats, setStats] = useState({ prod: 0, cons: 0, surplus: 0, co2: 284 });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [listModalOpen, setListModalOpen] = useState(false);
+
+  const fetchRealData = async () => {
+    try {
+      const res = await getEnergySurplus();
+      if (res.produced !== undefined) {
+         setStats({
+           prod: +res.produced,
+           cons: +res.consumed,
+           surplus: +res.surplus,
+           co2: +(+res.produced * 0.45).toFixed(1) // 0.45 kg of CO2 saved per kWh produced
+         });
+      }
+    } catch (e) {
+      console.error('Failed to fetch stats:', e);
+    }
+  }
 
   useEffect(() => {
+    fetchRealData();
+    // Only simulate chart changes now, the cards are strictly backend-driven
     const interval = setInterval(() => {
-      setStats(prev => {
-        const prod = +(prev.prod + (Math.random() * 0.1 - 0.04)).toFixed(2);
-        const cons = +(prev.cons + (Math.random() * 0.08 - 0.03)).toFixed(2);
-        const surplus = Math.max(0, +(prod - cons).toFixed(2));
-        const co2 = +(prev.co2 + Math.random() * 0.3).toFixed(1);
-        return { prod, cons, surplus, co2 };
-      });
-
       if (chartRef.current) {
         const last = chartRef.current.data.datasets[2].data;
         last[47] = +(Math.max(0, last[47] + (Math.random() * 0.3 - 0.1)).toFixed(2));
         chartRef.current.update('none');
       }
-    }, 3000);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const statCards = [
-    { label: 'Solar Production', icon: '☀️', value: stats.prod, unit: 'kWh today', color: 'green', trend: '▲ 12.3%', trendUp: true, sub: 'vs yesterday' },
-    { label: 'Energy Consumed', icon: '🔌', value: stats.cons, unit: 'kWh today', color: 'blue', trend: '▼ 3.1%', trendUp: false, sub: 'vs yesterday' },
-    { label: 'Surplus Available', icon: '⚡', value: stats.surplus, unit: 'kWh tradeable', color: 'amber', trend: '▲ 8.7%', trendUp: true, sub: 'vs avg' },
-    { label: 'CO₂ Saved', icon: '🌱', value: Math.floor(stats.co2), unit: 'kg this month', color: 'teal', trend: '▲ 21.4%', trendUp: true, sub: 'vs last month' },
+    { label: 'Solar Production', icon: '☀️', value: stats.prod, unit: 'kWh total', color: 'green' },
+    { label: 'Energy Consumed', icon: '🔌', value: stats.cons, unit: 'kWh total', color: 'blue' },
+    { label: 'Surplus Available', icon: '⚡', value: stats.surplus, unit: 'kWh tradeable', color: 'amber', action: 'List ↗' },
+    { label: 'CO₂ Saved', icon: '🌱', value: Math.floor(stats.co2), unit: 'kg total offset', color: 'teal' },
   ];
 
   const colorMap = {
@@ -74,10 +89,54 @@ export default function Dashboard() {
 
   return (
     <motion.div className="page-pad" style={{ padding: '24px 28px' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+      
+      {/* Dashboard Header */}
+      <div className="dash-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', gap: '20px', flexWrap: 'wrap' }}>
+        <div style={{ minWidth: '200px' }}>
+          <h1 style={{ fontFamily: 'var(--display)', fontSize: '24px', fontWeight: 800, letterSpacing: '-0.5px', marginBottom: '4px' }}>System Overview</h1>
+          <p style={{ fontSize: '12px', color: 'var(--text2)' }}>Live energy monitoring and P2P trading activity</p>
+        </div>
+        
+        <div className="dash-header-actions" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <motion.button
+            whileHover={{ scale: 1.05, translateY: -2 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setModalOpen(true)}
+            className="btn-glass"
+            style={{
+              background: 'rgba(0,255,135,0.06)', color: 'var(--green)', border: '1px solid rgba(0,255,135,0.15)',
+              borderRadius: '10px', padding: '10px 18px', fontWeight: 700,
+              fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>⚡</span>
+            Record Today
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05, translateY: -2 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setListModalOpen(true)}
+            className="btn-primary"
+            style={{
+              background: 'var(--amber)', color: '#1a1000', border: 'none',
+              borderRadius: '10px', padding: '10px 18px', fontWeight: 700,
+              fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px',
+              cursor: 'pointer', boxShadow: '0 8px 20px rgba(245,158,11,0.15)'
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>🛒</span>
+            Sell Surplus
+          </motion.button>
+        </div>
+      </div>
+
       {/* Stats Row */}
       <motion.div className="dash-grid-4" style={{ marginBottom: '20px' }} variants={container} initial="hidden" animate="show">
         {statCards.map((s, i) => {
           const c = colorMap[s.color];
+          const isListing = s.action === 'List ↗';
           return (
             <motion.div key={i} variants={item} className="stat-card" 
               whileHover={{ y: -8, scale: 1.03, borderColor: 'var(--border2)' }}
@@ -98,9 +157,31 @@ export default function Dashboard() {
                 <AnimatedNumber value={s.value} format={v => i === 3 ? Math.floor(v) : v.toFixed(1)} />
               </div>
               <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: '4px' }}>{s.unit}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontFamily: 'var(--mono)' }}>
-                <span style={{ color: s.trendUp ? 'var(--green)' : 'var(--red)' }}>{s.trend}</span>
-                <span style={{ fontSize: '10px', color: 'var(--text3)', marginLeft: '4px' }}>{s.sub}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                {s.trend ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', fontFamily: 'var(--mono)' }}>
+                    <span style={{ color: s.trendUp ? 'var(--green)' : 'var(--red)' }}>{s.trend}</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text3)', marginLeft: '4px' }}>{s.sub}</span>
+                  </div>
+                ) : (
+                  <span style={{ fontSize: '10px', color: 'var(--text3)' }}>Cumulative data</span>
+                )}
+                {s.action && (
+                  <motion.button 
+                    whileHover={{ scale: 1.1, x: 5 }} 
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => isListing ? setListModalOpen(true) : setModalOpen(true)}
+                    style={{
+                      background: isListing ? 'var(--amber)' : 'rgba(245,158,11,0.1)', 
+                      color: isListing ? '#1a1000' : 'var(--amber)', 
+                      border: isListing ? 'none' : '1px solid rgba(245,158,11,0.2)',
+                      borderRadius: '8px', padding: '6px 12px', fontSize: '11px', fontWeight: 700, cursor: 'pointer',
+                      boxShadow: isListing ? '0 4px 12px rgba(245,158,11,0.2)' : 'none'
+                    }}
+                  >
+                    {s.action}
+                  </motion.button>
+                )}
               </div>
             </motion.div>
           );
@@ -165,11 +246,11 @@ export default function Dashboard() {
             </div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', margin: '8px 0' }}>
               <span style={{ fontSize: '36px', fontWeight: 700, color: 'var(--teal)', letterSpacing: '-1px', fontFamily: 'var(--mono)' }}>
-                <AnimatedNumber value={284} format={v => Math.floor(v)} />
+                <AnimatedNumber value={stats.co2} format={v => Math.floor(v)} />
               </span>
               <span style={{ fontSize: '14px', color: 'var(--text2)', marginBottom: '6px' }}>kg CO₂</span>
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text2)', marginBottom: '12px' }}>≈ <span style={{ color: 'var(--teal)', fontWeight: 600 }}>13 trees</span> planted equivalent</div>
+            <div style={{ fontSize: '11px', color: 'var(--text2)', marginBottom: '12px' }}>≈ <span style={{ color: 'var(--teal)', fontWeight: 600 }}>{(stats.co2 / 21).toFixed(1)} trees</span> planted equivalent</div>
             <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Daily savings</div>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: '5px', height: '36px' }}>
               {[{ h: '50%', d: 'M' }, { h: '65%', d: 'T' }, { h: '45%', d: 'W' }, { h: '80%', d: 'T' }, { h: '70%', d: 'F' }, { h: '55%', d: 'S' }, { h: '90%', d: 'S' }].map((b, idx) => (
@@ -298,6 +379,19 @@ export default function Dashboard() {
       </div>
 
       <Ticker />
+
+      <RecordEnergyModal 
+        isOpen={modalOpen} 
+        onClose={() => setModalOpen(false)} 
+        onFinish={fetchRealData}
+      />
+
+      <ListEnergyModal
+        isOpen={listModalOpen}
+        onClose={() => setListModalOpen(false)}
+        maxSurplus={stats.surplus}
+        onFinish={fetchRealData}
+      />
     </motion.div>
   );
 }

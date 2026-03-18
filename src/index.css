@@ -576,3 +576,31 @@ body::after {
 
 /* Ticker — always full width, no overflow issues */
 .ticker-wrap { overflow: hidden; width: 100%; }
+ 
+/* --- Dashboard Header & Button Responsiveness --- */
+@media (max-width: 640px) {
+  .dash-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+  
+  .dash-header-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100%;
+    gap: 10px !important;
+  }
+
+  .dash-header-actions button {
+    justify-content: center !important;
+    padding: 12px 10px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .dash-header-actions {
+    grid-template-columns: 1fr !important;
+  }
+}
