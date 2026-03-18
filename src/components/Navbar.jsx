@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../App';
+import { API_BASE_URL } from '../api';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [clock, setClock] = useState('--:--:--');
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
@@ -28,6 +30,34 @@ export default function Navbar() {
   const handleNav = (path) => {
     navigate(path);
     setMobileOpen(false);
+  };
+
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      alert('Please install MetaMask!');
+      return;
+    }
+    
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const account = accounts[0];
+      
+      const response = await fetch(`${API_BASE_URL}/api/users/wallet/link`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ wallet_address: account })
+      });
+      
+      const data = await response.json();
+      if (response.ok) {
+        updateUser(data.user);
+      } else {
+        alert(data.error || 'Failed to link wallet');
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -83,6 +113,37 @@ export default function Navbar() {
           </div>
           <div style={{ fontSize: '11px', color: 'var(--text2)', fontFamily: 'var(--mono)' }}>{clock}</div>
 
+          {/* Wallet Info / Connect */}
+          {user?.wallet_address ? (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '6px 12px', borderRadius: '8px',
+              background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+              fontSize: '12px', fontWeight: 600, color: 'var(--amber)',
+              fontFamily: 'var(--mono)', letterSpacing: '0.5px',
+            }}>
+              🦊 {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
+            </div>
+          ) : (
+            <motion.button
+              onClick={connectWallet}
+              whileHover={{ scale: 1.1, translateY: -2 }}
+              whileTap={{ scale: 0.9 }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '6px 12px', borderRadius: '8px', cursor: 'pointer',
+                background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1))',
+                border: '1px solid rgba(245,158,11,0.3)',
+                fontSize: '12px', fontWeight: 600, color: 'var(--amber)',
+                transition: 'background 0.2s', fontFamily: 'var(--font)',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.15)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1))' }}
+            >
+              🦊 Connect Wallet
+            </motion.button>
+          )}
+
           {/* Profile Info */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: '8px',
@@ -108,28 +169,27 @@ export default function Navbar() {
           <div style={{ width: '1px', height: '24px', background: 'var(--border)', margin: '0 4px' }} />
 
           {/* Logout Button */}
-          <button 
+          <motion.button 
             onClick={logout}
             title="Logout"
+            whileHover={{ scale: 1.1, translateY: -2 }}
+            whileTap={{ scale: 0.9 }}
             style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               padding: '8px 14px',
               background: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.2)',
               borderRadius: '10px', cursor: 'pointer',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
               color: 'var(--red)',
               fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font)',
             }}
             onMouseEnter={e => {
               e.currentTarget.style.background = 'rgba(255,59,48,0.15)';
               e.currentTarget.style.borderColor = 'rgba(255,59,48,0.4)';
-              e.currentTarget.style.transform = 'translateY(-1px)';
               e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,59,48,0.1)';
             }}
             onMouseLeave={e => {
               e.currentTarget.style.background = 'rgba(255,59,48,0.08)';
               e.currentTarget.style.borderColor = 'rgba(255,59,48,0.2)';
-              e.currentTarget.style.transform = 'translateY(0)';
               e.currentTarget.style.boxShadow = 'none';
             }}
           >
@@ -139,7 +199,7 @@ export default function Navbar() {
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-          </button>
+          </motion.button>
         </div>
 
         {/* Mobile: profile avatar + hamburger */}
@@ -171,67 +231,80 @@ export default function Navbar() {
       </nav>
 
       {/* Mobile dropdown menu */}
-      {mobileOpen && (
-        <div style={{
-          position: 'fixed', top: '58px', left: 0, right: 0, zIndex: 99,
-          background: 'rgba(10,16,22,0.98)', borderBottom: '1px solid var(--border)',
-          backdropFilter: 'blur(16px)', padding: '16px 20px',
-          display: 'flex', flexDirection: 'column', gap: '8px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-        }}>
-          {/* User info */}
-          <div style={{ padding: '10px 12px', background: 'var(--card)', borderRadius: '10px', marginBottom: '4px', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: '12px', fontWeight: 600 }}>{user?.name || 'Guest'}</div>
-            <div style={{ fontSize: '10px', color: 'var(--text3)' }}>{user?.email || ''}</div>
-          </div>
-
-          {['Dashboard', 'Marketplace'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => handleNav('/' + tab.toLowerCase())}
-              style={{
-                padding: '12px 16px', borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
-                color: activePage === tab.toLowerCase() ? 'var(--green)' : 'var(--text2)',
-                fontSize: '14px', fontWeight: 500, border: 'none',
-                background: activePage === tab.toLowerCase() ? 'rgba(0,255,135,0.06)' : 'var(--card)',
-                fontFamily: 'var(--font)', width: '100%',
-              }}
-            >{tab}</button>
-          ))}
-
-          {/* Live badge */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '10px 14px', borderRadius: '8px',
-            background: 'rgba(0,255,135,0.05)',
-            fontSize: '11px', fontWeight: 600, color: 'var(--green)',
-            fontFamily: 'var(--mono)',
-          }}>
-            <div className="live-dot" />
-            LIVE · {clock}
-          </div>
-
-          {/* Logout */}
-          <button
-            onClick={logout}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -20, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -20, filter: 'blur(8px)' }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
             style={{
-              padding: '12px 16px', borderRadius: '8px', cursor: 'pointer',
-              color: 'var(--red)', fontSize: '14px', fontWeight: 600,
-              border: '1px solid rgba(255,59,48,0.2)',
-              background: 'rgba(255,59,48,0.06)',
-              fontFamily: 'var(--font)', width: '100%', textAlign: 'left',
-              display: 'flex', alignItems: 'center', gap: '10px',
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-              <polyline points="16 17 21 12 16 7" />
-              <line x1="21" y1="12" x2="9" y2="12" />
-            </svg>
-            Sign Out
-          </button>
-        </div>
-      )}
+            position: 'fixed', top: '58px', left: 0, right: 0, zIndex: 99,
+            background: 'rgba(10,16,22,0.98)', borderBottom: '1px solid var(--border)',
+            backdropFilter: 'blur(16px)', padding: '16px 20px',
+            display: 'flex', flexDirection: 'column', gap: '8px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          }}>
+            {/* User info */}
+            <div style={{ padding: '10px 12px', background: 'var(--card)', borderRadius: '10px', marginBottom: '4px', border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600 }}>{user?.name || 'Guest'}</div>
+              <div style={{ fontSize: '10px', color: 'var(--text3)', marginBottom: user?.wallet_address ? '4px' : '0' }}>{user?.email || ''}</div>
+              {user?.wallet_address && (
+                <div style={{ fontSize: '11px', color: 'var(--amber)', fontFamily: 'var(--mono)' }}>
+                  🦊 {user.wallet_address.slice(0, 6)}...{user.wallet_address.slice(-4)}
+                </div>
+              )}
+            </div>
+
+            {['Dashboard', 'Marketplace'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => handleNav('/' + tab.toLowerCase())}
+                style={{
+                  padding: '12px 16px', borderRadius: '8px', cursor: 'pointer', textAlign: 'left',
+                  color: activePage === tab.toLowerCase() ? 'var(--green)' : 'var(--text2)',
+                  fontSize: '14px', fontWeight: 500, border: 'none',
+                  background: activePage === tab.toLowerCase() ? 'rgba(0,255,135,0.06)' : 'var(--card)',
+                  fontFamily: 'var(--font)', width: '100%',
+                }}
+              >{tab}</button>
+            ))}
+
+            {/* Live badge */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '10px 14px', borderRadius: '8px',
+              background: 'rgba(0,255,135,0.05)',
+              fontSize: '11px', fontWeight: 600, color: 'var(--green)',
+              fontFamily: 'var(--mono)',
+            }}>
+              <div className="live-dot" />
+              LIVE · {clock}
+            </div>
+
+            {/* Logout */}
+            <motion.button
+              onClick={logout}
+              whileTap={{ scale: 0.98 }}
+              style={{
+                padding: '12px 16px', borderRadius: '8px', cursor: 'pointer',
+                color: 'var(--red)', fontSize: '14px', fontWeight: 600,
+                border: '1px solid rgba(255,59,48,0.2)',
+                background: 'rgba(255,59,48,0.06)',
+                fontFamily: 'var(--font)', width: '100%', textAlign: 'left',
+                display: 'flex', alignItems: 'center', gap: '10px',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                <polyline points="16 17 21 12 16 7" />
+                <line x1="21" y1="12" x2="9" y2="12" />
+              </svg>
+              Sign Out
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

@@ -1,5 +1,4 @@
 .landing-page-container {
-  background: var(--bg);
   color: var(--text);
   font-family: var(--body);
   font-size: 15px;
@@ -12,37 +11,6 @@
 /* ── Cursor ── */
 .landing-page-container * { cursor: default; }
 .landing-page-container a, .landing-page-container button { cursor: pointer; }
-
-/* ── Canvas BG ── */
-.landing-page-container canvas#bgCanvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.55;
-}
-
-/* ── Noise overlay ── */
-.landing-page-container::after {
-  content: '';
-  position: absolute; inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none; z-index: 0; opacity: 0.6;
-}
-
-/* ── Grid lines ── */
-.landing-page-container::before {
-  content: '';
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(0,255,135,0.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,255,135,0.025) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events: none; z-index: 0;
-}
 
 /* ── Layout ── */
 .landing-page-container .wrap { position: relative; z-index: 1; }

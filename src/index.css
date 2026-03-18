@@ -28,6 +28,11 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  cursor: none !important;
+}
+
+a, button, input {
+  cursor: none !important;
 }
 
 body {
@@ -55,16 +60,24 @@ body {
 }
 
 /* Grid lines overlay */
+@keyframes grid-pan {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(48px); }
+}
+
 body::before {
   content: '';
   position: fixed;
-  inset: 0;
+  inset: -100px;
   background-image:
     linear-gradient(rgba(0, 255, 135, 0.02) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 255, 135, 0.02) 1px, transparent 1px);
   background-size: 48px 48px;
   pointer-events: none;
   z-index: 0;
+  animation: grid-pan 15s linear infinite;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 100%);
 }
 
 /* Noise overlay */

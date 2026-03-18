@@ -12,6 +12,8 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 import { API_BASE_URL } from './api';
+import BackgroundCanvas from './components/BackgroundCanvas';
+import CustomCursor from './components/CustomCursor';
 
 // 1. Auth Context
 const AuthContext = createContext(null);
@@ -51,6 +53,10 @@ function AuthProvider({ children }) {
     setUser(userData);
   };
 
+  const updateUser = (newData) => {
+    setUser(prev => ({ ...prev, ...newData }));
+  };
+
   const logout = async () => {
     try {
       await fetch(`${API_BASE_URL}/api/users/logout`, {
@@ -69,7 +75,7 @@ function AuthProvider({ children }) {
   const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, loading }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, updateUser, loading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -121,6 +127,8 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <CustomCursor />
+      <BackgroundCanvas />
       <ToastProvider>
         <AuthProvider>
           <Routes>

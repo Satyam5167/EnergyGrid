@@ -1,92 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useToast } from '../contexts/ToastContext';
 import './Landing.css';
 
 export default function Landing() {
   const { showToast } = useToast();
-  const canvasRef = useRef(null);
   const sparkChartRef = useRef(null);
-
-  useEffect(() => {
-    // ── Animated background canvas ──
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const c = canvas.getContext('2d');
-    let W, H, nodes = [];
-    let animationId;
-
-    function resize() {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    // Create house nodes
-    for (let i = 0; i < 18; i++) {
-      nodes.push({
-        x: Math.random() * W, y: Math.random() * H,
-        vx: (Math.random() - .5) * 0.3, vy: (Math.random() - .5) * 0.3,
-        r: Math.random() * 2 + 1,
-        glow: Math.random() < 0.3
-      });
-    }
-
-    function drawBg() {
-      c.clearRect(0, 0, W, H);
-
-      // Draw edges between nearby nodes
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d < 160) {
-            c.beginPath();
-            c.moveTo(nodes[i].x, nodes[i].y);
-            c.lineTo(nodes[j].x, nodes[j].y);
-            c.strokeStyle = `rgba(0,255,135,${0.06 * (1 - d / 160)})`;
-            c.lineWidth = 0.5;
-            c.stroke();
-          }
-        }
-      }
-
-      // Draw nodes
-      nodes.forEach(n => {
-        c.beginPath();
-        c.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        c.fillStyle = n.glow ? 'rgba(0,255,135,0.8)' : 'rgba(0,255,135,0.3)';
-        c.fill();
-        if (n.glow) {
-          c.beginPath();
-          c.arc(n.x, n.y, n.r + 4, 0, Math.PI * 2);
-          c.fillStyle = 'rgba(0,255,135,0.06)';
-          c.fill();
-        }
-
-        // Move
-        n.x += n.vx; n.y += n.vy;
-        if (n.x < 0 || n.x > W) n.vx *= -1;
-        if (n.y < 0 || n.y > H) n.vy *= -1;
-      });
-
-      // Radial glow bottom center
-      const gr = c.createRadialGradient(W / 2, H * .7, 0, W / 2, H * .7, W * .4);
-      gr.addColorStop(0, 'rgba(0,255,135,0.04)');
-      gr.addColorStop(1, 'transparent');
-      c.fillStyle = gr;
-      c.fillRect(0, 0, W, H);
-
-      animationId = requestAnimationFrame(drawBg);
-    }
-    drawBg();
-
-    return () => {
-      window.removeEventListener('resize', resize);
-      cancelAnimationFrame(animationId);
-    };
-  }, []);
 
   useEffect(() => {
     // ── Counter animation ──
@@ -108,16 +28,8 @@ export default function Landing() {
       countUp('c3', 5800, 'kg');
     }, 400);
 
-    // ── Reveal on scroll ──
-    const reveals = document.querySelectorAll('.reveal');
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.1 });
-    reveals.forEach(r => obs.observe(r));
-
     return () => {
       clearTimeout(t);
-      obs.disconnect();
     };
   }, []);
 
@@ -148,14 +60,23 @@ export default function Landing() {
     return () => clearInterval(chartInterval);
   }, []);
 
+  const revealProps = {
+    initial: { opacity: 0, y: 50, scale: 0.9 },
+    whileInView: { opacity: 1, y: 0, scale: 1 },
+    viewport: { once: false, amount: 0.15 },
+    transition: { type: "spring", stiffness: 100, damping: 15, duration: 0.6 }
+  };
+
   return (
     <div className="landing-page-container">
-      <canvas id="bgCanvas" ref={canvasRef}></canvas>
-
       <div className="wrap">
 
         {/* NAV */}
-        <nav>
+        <motion.nav 
+          initial={{ y: -20, opacity: 0 }} 
+          animate={{ y: 0, opacity: 1 }} 
+          transition={{ duration: 0.6 }}
+        >
           <Link to="/" className="nav-logo">
             <div className="logo-mark">⚡</div>
             EnergyGrid
@@ -166,34 +87,34 @@ export default function Landing() {
             <a href="#community" className="nav-link">Community</a>
             <Link to="/login" className="nav-cta">Launch App →</Link>
           </div>
-        </nav>
+        </motion.nav>
 
         {/* HERO */}
         <section className="hero">
           {/* Floating cards */}
-          <div className="hero-float float-1">
-            <div className="float-card">
+          <motion.div className="hero-float float-1" initial={{ opacity: 0, scale: 0.5, x: -50 }} animate={{ opacity: 1, scale: 1, x: 0 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.2 }}>
+            <motion.div className="float-card" whileHover={{ scale: 1.1, rotate: 2 }} transition={{ type: "spring", stiffness: 300 }}>
               <div className="float-label">Live trade</div>
               <div className="float-val g">+3.2 kWh</div>
               <div className="float-trend">⚡ Priya → Ravi · ₹6.40</div>
-            </div>
-          </div>
-          <div className="hero-float float-2">
-            <div className="float-card">
+            </motion.div>
+          </motion.div>
+          <motion.div className="hero-float float-2" initial={{ opacity: 0, scale: 0.5, y: -50 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.4 }}>
+            <motion.div className="float-card" whileHover={{ scale: 1.1, rotate: -2 }} transition={{ type: "spring", stiffness: 300 }}>
               <div className="float-label">AI Forecast</div>
               <div className="float-val a">8.4 kWh</div>
               <div className="float-trend" style={{ color: 'var(--text2)' }}>next 4 hours ↑</div>
-            </div>
-          </div>
-          <div className="hero-float float-3">
-            <div className="float-card">
+            </motion.div>
+          </motion.div>
+          <motion.div className="hero-float float-3" initial={{ opacity: 0, scale: 0.5, x: 50 }} animate={{ opacity: 1, scale: 1, x: 0 }} transition={{ type: "spring", stiffness: 120, damping: 14, delay: 0.6 }}>
+            <motion.div className="float-card" whileHover={{ scale: 1.1, rotate: 2 }} transition={{ type: "spring", stiffness: 300 }}>
               <div className="float-label">CO₂ Saved Today</div>
               <div className="float-val b">142 kg</div>
               <div className="float-trend">🌱 microgrid total</div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div style={{ maxWidth: '780px', width: '100%' }}>
+          <motion.div style={{ maxWidth: '780px', width: '100%' }} initial={{ opacity: 0, y: 40, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 100, damping: 20, delay: 0.1 }}>
             <div className="hero-eyebrow">
               <div className="eyebrow-dot"></div>
               P2P SOLAR ENERGY TRADING · LIVE ON SEPOLIA
@@ -209,8 +130,12 @@ export default function Landing() {
             </p>
 
             <div className="hero-actions">
-              <Link to="/login" className="btn-primary">Start Trading Free</Link>
-              <a href="#how" className="btn-outline">See how it works</a>
+              <Link to="/login">
+                <motion.div className="btn-primary" style={{ display: "inline-block" }} whileHover={{ scale: 1.1, translateY: -4 }} whileTap={{ scale: 0.9 }}>Start Trading Free</motion.div>
+              </Link>
+              <a href="#how" style={{ textDecoration: 'none' }}>
+                <motion.div className="btn-outline" style={{ display: "inline-block" }} whileHover={{ scale: 1.1, translateY: -4 }} whileTap={{ scale: 0.9 }}>See how it works</motion.div>
+              </a>
             </div>
 
             <div className="hero-stats">
@@ -227,28 +152,28 @@ export default function Landing() {
                 <span className="h-stat-label">CO₂ Saved (kg)</span>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* STATS BAND */}
-        <div className="stats-band">
+        <motion.div className="stats-band" {...revealProps} transition={{ type: "spring", stiffness: 120, damping: 15 }}>
           <div className="stats-inner">
             <div className="big-stat"><div className="big-num">14.7k</div><div className="big-label">kWh Traded</div></div>
             <div className="big-stat"><div className="big-num">284</div><div className="big-label">Active Homes</div></div>
             <div className="big-stat"><div className="big-num">5.8t</div><div className="big-label">CO₂ Offset</div></div>
             <div className="big-stat"><div className="big-num">₹2.1L</div><div className="big-label">Earned by Sellers</div></div>
           </div>
-        </div>
+        </motion.div>
 
         {/* HOW IT WORKS */}
         <section className="section" id="how">
-          <div className="reveal">
+          <motion.div {...revealProps}>
             <div className="section-eyebrow">How it works</div>
             <h2 className="section-title">Four steps to your<br />first trade</h2>
             <p className="section-sub">From your solar panels to your neighbor's meter — fully automated, fully transparent.</p>
-          </div>
+          </motion.div>
 
-          <div className="steps-grid reveal" style={{ transitionDelay: '.1s' }}>
+          <motion.div className="steps-grid" {...revealProps} transition={{ ...revealProps.transition, delay: 0.1 }}>
             <div className="step">
               <div className="step-num">01 —</div>
               <div className="step-icon" style={{ background: 'rgba(0,255,135,0.08)' }}>☀️</div>
@@ -276,13 +201,13 @@ export default function Landing() {
               <div className="step-title">On-Chain Settlement</div>
               <div className="step-desc">Every settled trade is logged on Sepolia with a verifiable TX hash and CO₂ credit. Immutable audit trail.</div>
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* FEATURES */}
         <section className="section" id="features">
           <div className="features-layout">
-            <div className="reveal">
+            <motion.div {...revealProps}>
               <div className="section-eyebrow">Platform Features</div>
               <h2 className="section-title">Built for the<br />decentralized grid</h2>
               <p className="section-sub" style={{ marginBottom: '32px' }}>Every component designed to make local energy markets real, not theoretical.</p>
@@ -317,10 +242,10 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Dashboard mockup */}
-            <div className="reveal" style={{ transitionDelay: '.15s' }}>
+            <motion.div {...revealProps} transition={{ ...revealProps.transition, delay: 0.15 }}>
               <div className="dash-preview">
                 <div className="dash-preview-bar">
                   <div className="db-dot" style={{ background: '#ff5f57' }}></div>
@@ -360,19 +285,19 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* COMMUNITY */}
         <section className="section" id="community">
-          <div className="reveal">
+          <motion.div {...revealProps}>
             <div className="section-eyebrow">Community</div>
             <h2 className="section-title">Real households,<br />real savings</h2>
-          </div>
+          </motion.div>
 
           <div className="households-grid">
-            <div className="household-card reveal">
+            <motion.div className="household-card" {...revealProps}>
               <div className="hh-top">
                 <div className="hh-avatar" style={{ background: 'linear-gradient(135deg,#1565c0,#42a5f5)' }}>AK</div>
                 <div><div className="hh-name">Arjun Kulkarni</div><div className="hh-loc">Koramangala, Bengaluru</div></div>
@@ -382,8 +307,8 @@ export default function Landing() {
                 <div><div className="hh-stat-val">₹1,840</div><div className="hh-stat-l">earned this month</div></div>
                 <div><div className="hh-stat-val">47 kg</div><div className="hh-stat-l">CO₂ offset</div></div>
               </div>
-            </div>
-            <div className="household-card reveal" style={{ transitionDelay: '.1s' }}>
+            </motion.div>
+            <motion.div className="household-card" {...revealProps} transition={{ ...revealProps.transition, delay: 0.1 }}>
               <div className="hh-top">
                 <div className="hh-avatar" style={{ background: 'linear-gradient(135deg,#6a1b9a,#ab47bc)' }}>PS</div>
                 <div><div className="hh-name">Priya Sharma</div><div className="hh-loc">Banjara Hills, Hyderabad</div></div>
@@ -393,8 +318,8 @@ export default function Landing() {
                 <div><div className="hh-stat-val">₹3,210</div><div className="hh-stat-l">earned this month</div></div>
                 <div><div className="hh-stat-val">98</div><div className="hh-stat-l">reputation score</div></div>
               </div>
-            </div>
-            <div className="household-card reveal" style={{ transitionDelay: '.2s' }}>
+            </motion.div>
+            <motion.div className="household-card" {...revealProps} transition={{ ...revealProps.transition, delay: 0.2 }}>
               <div className="hh-top">
                 <div className="hh-avatar" style={{ background: 'linear-gradient(135deg,#00695c,#26a69a)' }}>RM</div>
                 <div><div className="hh-name">Ravi Menon</div><div className="hh-loc">Indiranagar, Bengaluru</div></div>
@@ -404,23 +329,25 @@ export default function Landing() {
                 <div><div className="hh-stat-val">₹940</div><div className="hh-stat-l">saved this month</div></div>
                 <div><div className="hh-stat-val">28 kg</div><div className="hh-stat-l">CO₂ offset</div></div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* CTA */}
         <section className="cta-section">
           <div className="cta-glow"></div>
-          <div className="cta-box reveal">
+          <motion.div className="cta-box" {...revealProps}>
             <div className="section-eyebrow" style={{ textAlign: 'center' }}>Join the waitlist</div>
             <div className="cta-title">Ready to trade<br />your sunshine?</div>
             <div className="cta-sub">Connect your rooftop. Join your neighborhood microgrid. Start earning.</div>
             <div className="cta-form">
               <input type="email" className="cta-input" placeholder="your@email.com" />
-              <Link to="/login" className="btn-primary" style={{ whiteSpace: 'nowrap' }} onClick={() => showToast('🚀', 'Welcome to the waitlist!')}>Get Early Access</Link>
+              <Link to="/login" style={{ textDecoration: 'none' }}>
+                <motion.div className="btn-primary" style={{ whiteSpace: 'nowrap' }} whileHover={{ scale: 1.1, translateY: -4 }} whileTap={{ scale: 0.9 }} onClick={() => showToast('🚀', 'Welcome to the waitlist!')}>Get Early Access</motion.div>
+              </Link>
             </div>
             <div className="cta-hint">No credit card required · Sepolia testnet · Open source</div>
-          </div>
+          </motion.div>
         </section>
 
         {/* FOOTER */}
