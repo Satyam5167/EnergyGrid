@@ -70,48 +70,71 @@ export default function Navbar() {
         backdropFilter: 'blur(10px)',
         position: 'sticky', top: 0, zIndex: 100,
       }}>
-        {/* Logo */}
-        <div onClick={() => navigate('/')} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px', cursor: 'pointer', fontFamily: 'var(--display)' }}>
+        {/* Left: Logo */}
+        <div onClick={() => navigate('/')} style={{ flex: '1 0 0', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '18px', fontWeight: 700, letterSpacing: '-0.3px', cursor: 'pointer', fontFamily: 'var(--display)' }}>
           <div style={{
-            width: '30px', height: '30px', borderRadius: '8px',
+            width: '32px', height: '32px', borderRadius: '8px',
             background: 'linear-gradient(135deg, var(--green), var(--green3))',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '15px', boxShadow: '0 0 16px rgba(0,255,135,0.3)',
+            fontSize: '16px', boxShadow: '0 0 20px rgba(0,255,135,0.4)',
           }}>⚡</div>
-          <span>EnergyGrid</span>
-          <span style={{ color: 'var(--text3)', fontWeight: 500, fontSize: '12px', marginLeft: '4px', fontFamily: 'var(--body)' }}>v2.0</span>
+          <span style={{ color: 'var(--text)' }}>EnergyGrid</span>
+          <span style={{ color: 'var(--text3)', fontWeight: 600, fontSize: '10px', padding: '2px 6px', background: 'var(--border)', borderRadius: '4px', marginLeft: '6px' }}>V2.0</span>
         </div>
 
-        {/* Tabs — hidden on mobile via CSS */}
-        <div className="navbar-tabs" style={{ display: 'flex', gap: '2px' }}>
-          {['Dashboard', 'Marketplace'].map(tab => (
-            <button
-              key={tab}
-              onClick={() => handleNav('/' + tab.toLowerCase())}
-              style={{
-                padding: '6px 16px', borderRadius: '6px', cursor: 'pointer',
-                color: activePage === tab.toLowerCase() ? 'var(--text)' : 'var(--text2)',
-                fontSize: '13px', fontWeight: 500, border: 'none',
-                background: activePage === tab.toLowerCase() ? 'var(--bg3)' : 'none',
-                transition: 'all .2s', fontFamily: 'var(--font)',
-              }}
-            >{tab}</button>
-          ))}
+        {/* Center: Tabs */}
+        <div className="navbar-tabs" style={{ 
+          display: 'flex', gap: '6px', 
+          background: 'var(--bg2)', padding: '4px', borderRadius: '10px',
+          border: '1px solid var(--border)' 
+        }}>
+          {['Dashboard', 'Marketplace'].map(tab => {
+            const isActive = activePage === tab.toLowerCase();
+            return (
+              <button
+                key={tab}
+                onClick={() => handleNav('/' + tab.toLowerCase())}
+                style={{
+                  padding: '6px 20px', borderRadius: '7px', cursor: 'pointer',
+                  color: isActive ? 'var(--green)' : 'var(--text2)',
+                  fontSize: '13px', fontWeight: 600, border: 'none',
+                  background: isActive ? 'rgba(0,255,135,0.08)' : 'transparent',
+                  transition: 'all .3s cubic-bezier(0.4, 0, 0.2, 1)', 
+                  fontFamily: 'var(--body)',
+                  position: 'relative'
+                }}
+              >
+                {tab}
+                {isActive && (
+                  <motion.div 
+                    layoutId="navTab"
+                    style={{ 
+                      position: 'absolute', bottom: '-8px', left: '20%', right: '20%', 
+                      height: '2px', background: 'var(--green)', borderRadius: '2px',
+                      boxShadow: '0 0 8px var(--green)'
+                    }} 
+                  />
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Right — hidden on mobile */}
-        <div className="navbar-right-full" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            padding: '4px 10px', borderRadius: '20px',
-            background: 'rgba(0,255,135,0.08)', border: '1px solid rgba(0,255,135,0.2)',
-            fontSize: '11px', fontWeight: 600, color: 'var(--green)',
-            fontFamily: 'var(--mono)', letterSpacing: '0.5px',
-          }}>
-            <div className="live-dot" />
-            LIVE
+        {/* Right: Actions */}
+        <div className="navbar-right-full" style={{ flex: '1 0 0', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginRight: '8px' }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '4px 10px', borderRadius: '20px',
+              background: 'rgba(0,255,135,0.05)', border: '1px solid rgba(0,255,135,0.1)',
+              fontSize: '10px', fontWeight: 700, color: 'var(--green)',
+              fontFamily: 'var(--mono)', textTransform: 'uppercase'
+            }}>
+              <div className="live-dot" />
+              LIVE
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text2)', fontFamily: 'var(--mono)', fontWeight: 500 }}>{clock}</div>
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text2)', fontFamily: 'var(--mono)' }}>{clock}</div>
 
           {/* Wallet Info / Connect */}
           {user?.wallet_address ? (
@@ -127,18 +150,16 @@ export default function Navbar() {
           ) : (
             <motion.button
               onClick={connectWallet}
-              whileHover={{ scale: 1.1, translateY: -2 }}
-              whileTap={{ scale: 0.9 }}
+              whileHover={{ scale: 1.05, translateY: -1 }}
+              whileTap={{ scale: 0.95 }}
               style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '6px 12px', borderRadius: '8px', cursor: 'pointer',
-                background: 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1))',
-                border: '1px solid rgba(245,158,11,0.3)',
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '8px 16px', borderRadius: '10px', cursor: 'pointer',
+                background: 'rgba(245,158,11,0.08)',
+                border: '1px solid rgba(245,158,11,0.2)',
                 fontSize: '12px', fontWeight: 600, color: 'var(--amber)',
-                transition: 'background 0.2s', fontFamily: 'var(--font)',
+                transition: 'all 0.2s', fontFamily: 'var(--body)',
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.15)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.1))' }}
             >
               🦊 Connect Wallet
             </motion.button>
@@ -172,29 +193,19 @@ export default function Navbar() {
           <motion.button 
             onClick={logout}
             title="Logout"
-            whileHover={{ scale: 1.1, translateY: -2 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05, background: 'rgba(255,59,48,0.12)' }}
+            whileTap={{ scale: 0.95 }}
             style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              padding: '8px 14px',
-              background: 'rgba(255,59,48,0.08)', border: '1px solid rgba(255,59,48,0.2)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: '36px', height: '36px',
+              background: 'rgba(255,59,48,0.06)', border: '1px solid rgba(255,59,48,0.15)',
               borderRadius: '10px', cursor: 'pointer',
               color: 'var(--red)',
-              fontSize: '12px', fontWeight: 600, fontFamily: 'var(--font)',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(255,59,48,0.15)';
-              e.currentTarget.style.borderColor = 'rgba(255,59,48,0.4)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,59,48,0.1)';
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(255,59,48,0.08)';
-              e.currentTarget.style.borderColor = 'rgba(255,59,48,0.2)';
-              e.currentTarget.style.boxShadow = 'none';
+              fontSize: '12px', fontWeight: 600, fontFamily: 'var(--body)',
+              transition: 'all 0.2s'
             }}
           >
-            <span>Sign Out</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.9 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.9 }}>
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
@@ -265,7 +276,7 @@ export default function Navbar() {
                   color: activePage === tab.toLowerCase() ? 'var(--green)' : 'var(--text2)',
                   fontSize: '14px', fontWeight: 500, border: 'none',
                   background: activePage === tab.toLowerCase() ? 'rgba(0,255,135,0.06)' : 'var(--card)',
-                  fontFamily: 'var(--font)', width: '100%',
+                  fontFamily: 'var(--body)', width: '100%',
                 }}
               >{tab}</button>
             ))}
@@ -291,7 +302,7 @@ export default function Navbar() {
                 color: 'var(--red)', fontSize: '14px', fontWeight: 600,
                 border: '1px solid rgba(255,59,48,0.2)',
                 background: 'rgba(255,59,48,0.06)',
-                fontFamily: 'var(--font)', width: '100%', textAlign: 'left',
+                fontFamily: 'var(--body)', width: '100%', textAlign: 'left',
                 display: 'flex', alignItems: 'center', gap: '10px',
               }}
             >
